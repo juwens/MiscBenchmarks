@@ -1,54 +1,44 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using System.Collections.Immutable;
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run<Foobar>();
+        new AnyVsCount().Any();
+        new AnyVsCount().CountEqZero();
+
+
+        BenchmarkRunner.Run<AnyVsCount>();
     }
 }
 
 [MemoryDiagnoser]
 [Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
-public class Foobar
+public class AnyVsCount
 {
-    /*
-     
-    |           Method |      Mean |    Error |   StdDev |    Median | Rank |   Gen0 | Allocated |
-    |----------------- |----------:|---------:|---------:|----------:|-----:|-------:|----------:|
-    |          ToArray |  20.84 ns | 0.279 ns | 0.233 ns |  20.93 ns |    1 | 0.0076 |      64 B |
-    |           ToList |  26.73 ns | 0.590 ns | 1.219 ns |  26.23 ns |    2 | 0.0114 |      96 B |
-    | ToImmutableArray |  34.82 ns | 0.424 ns | 0.397 ns |  34.86 ns |    3 | 0.0076 |      64 B |
-    |  ToImmutableList | 204.00 ns | 1.663 ns | 1.299 ns | 204.13 ns |    4 | 0.0629 |     528 B |
-    
-     */
+    const int nrOfElements = 1000;
+    static readonly int[] Input = new int[nrOfElements];
 
-    static readonly int[] Enumerable = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; 
-
-    [Benchmark]
-    public List<int> ToList()
+    static AnyVsCount()
     {
-        return Enumerable.ToList();
+        var rng = new Random(666);
+        for (int i = 0; i < nrOfElements; i++)
+        {
+            Input[i] = rng.Next(2048);
+        }
     }
 
     [Benchmark]
-    public int[] ToArray()
+    public bool Any()
     {
-        return Enumerable.ToArray();
+        return Input.Any(x => x < 1234);
     }
 
     [Benchmark]
-    public ImmutableArray<int> ToImmutableArray()
+    public bool CountEqZero()
     {
-        return Enumerable.ToImmutableArray();
-    }
-
-    [Benchmark]
-    public ImmutableList<int> ToImmutableList()
-    {
-        return Enumerable.ToImmutableList();
+        return Input.Count(x => x < 1234) > 0;
     }
 }
